@@ -188,8 +188,8 @@ st.markdown(
       }}
       .subtitle {{
         color: {MCMAROON};
-        font-size: 34px;
-        font-weight: 600;
+        font-size: 24px;
+        font-weight: 400;
         line-height: 1.25;
         margin-bottom: 6px;
       }}
@@ -210,8 +210,8 @@ st.markdown(
       /* Feature header (blue) */
       .feat {{
         color: {LABELBLUE};
-        font-weight: 900;
-        font-size: 19px;
+        font-weight: 600;
+        font-size: 18px;
         margin-top: 8px;
         margin-bottom: 4px;
       }}
@@ -227,12 +227,12 @@ st.markdown(
 
       /* MC panel labels must match left */
       .mc-panel label {{
-        font-size: 16px !important;
-        font-weight: 800 !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
         color: {LABELBLUE} !important;
       }}
       .mc-panel .stCheckbox p {{
-        font-size: 16px !important;
+        font-size: 18px !important;
       }}
 
       /* Yellow run button */
@@ -555,7 +555,7 @@ if submitted:
         plt.plot(ages, mean, linewidth=2, label="Mean TL")
         plt.fill_between(ages, lo95, hi95, alpha=0.20, label="95% CI")
         plt.fill_between(ages, lo68, hi68, alpha=0.35, label="68% CI")
-        plt.xlabel("Age (yr)")
+        plt.xlabel("Age (year)")
         plt.ylabel("Thickness Loss (mm)")
         plt.grid(True, alpha=0.3)
         plt.legend()
@@ -563,3 +563,4 @@ if submitted:
 
         png_bytes = fig_to_png_bytes(fig)
         st.download_button("Download plot (PNG)", data=png_bytes, file_name="thickness_loss_plot.png", mime="image/png")
+
