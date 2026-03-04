@@ -178,24 +178,24 @@ st.set_page_config(page_title="Predicting corrosion-induced thickness loss", lay
 st.markdown(
     f"""
     <style>
-      .stApp {{ font-size: 22px; }}
+      .stApp {{ font-size: 20px; }}
 
       .title {{
         color: {MCMAROON};
         font-weight: 900;
-        font-size: 36px;
+        font-size: 48px;
         margin-bottom: 6px;
       }}
       .subtitle {{
         color: {MCMAROON};
-        font-size: 26px;
+        font-size: 34px;
         font-weight: 600;
         line-height: 1.25;
         margin-bottom: 6px;
       }}
       .sectiontitle {{
         color: {MCMAROON};
-        font-size: 22px;
+        font-size: 30px;
         font-weight: 900;
         margin-top: 16px;
         margin-bottom: 10px;
@@ -206,20 +206,33 @@ st.markdown(
         padding: 16px 18px;
         background: rgba(250,250,250,0.90);
       }}
+
+      /* Feature header (blue) */
       .feat {{
         color: {LABELBLUE};
-        font-weight: 600;
-        font-size: 22px;
+        font-weight: 900;
+        font-size: 19px;
         margin-top: 8px;
         margin-bottom: 4px;
       }}
 
-      /* Make widget text bigger */
-      .stNumberInput input, .stSelectbox div[data-baseweb="select"] {{
-        font-size: 18px !important;
+      /* Inputs */
+      .stNumberInput input,
+      .stSelectbox div[data-baseweb="select"] {{
+        font-size: 16px !important;
       }}
       .stCheckbox p {{
-        font-size: 18px !important;
+        font-size: 16px !important;
+      }}
+
+      /* MC panel labels must match left */
+      .mc-panel label {{
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        color: {LABELBLUE} !important;
+      }}
+      .mc-panel .stCheckbox p {{
+        font-size: 16px !important;
       }}
 
       /* Yellow run button */
@@ -228,7 +241,7 @@ st.markdown(
         border: 2px solid {MCMAROON} !important;
         color: {MCMAROON} !important;
         font-weight: 900 !important;
-        font-size: 22px !important;
+        font-size: 20px !important;
         padding: 0.6rem 1.2rem !important;
         border-radius: 12px !important;
       }}
@@ -237,7 +250,7 @@ st.markdown(
       }}
 
       .outline {{
-        font-size: 26px;
+        font-size: 24px;
         line-height: 1.35;
       }}
     </style>
@@ -252,7 +265,10 @@ st.markdown(
 )
 st.latex(r"TL(t,T)=k\, t^n \exp\left[\beta\,(T-T_0)\right]")
 
-st.markdown("<div class='sectiontitle'>Input Parameters [Up to two unknowns allowed to be imputed by kNN]</div>", unsafe_allow_html=True)
+st.markdown(
+    "<div class='sectiontitle'>Input Parameters [Up to two unknowns allowed to be imputed by kNN]</div>",
+    unsafe_allow_html=True
+)
 
 prep, gpr, meta = load_artifacts()
 expected_cols = meta["expected_raw_columns"]
@@ -261,14 +277,12 @@ mu_n = float(meta["constants"]["mu_n"])
 mu_beta = float(meta["constants"]["mu_beta"])
 
 
-# --------- helpers to avoid duplicate labels ----------
-def feature_header(text):
+def feature_header(text: str):
     st.markdown(f"<div class='feat'>{text}</div>", unsafe_allow_html=True)
 
 
 def checkbox_unknown(key, default=False, disabled=False):
-    # label hidden; we print our own header above
-    return st.checkbox("Unknown (NA)", value=default, key=key, disabled=disabled, label_visibility="visible")
+    return st.checkbox("Unknown (NA)", value=default, key=key, disabled=disabled)
 
 
 def num_input_no_label(value_key, minv, maxv, default, step, disabled=False, help_text=""):
@@ -296,21 +310,20 @@ def select_input_no_label(value_key, options, default_idx=0, disabled=False):
     )
 
 
-# -------- layout: inputs box + MC box --------
 left, right = st.columns([2.4, 1.1], gap="large")
 
 with st.form("input_form"):
-    # LEFT PANEL (boxed)
+    # LEFT PANEL
     with left:
         st.markdown("<div class='panel'>", unsafe_allow_html=True)
         c1, c2 = st.columns(2, gap="large")
 
         user_row = {}
 
-        # --- AGE (required but show NA checkbox) ---
+        # AGE
         with c1:
             feature_header("Age (yr)")
-            age_na = checkbox_unknown("na_age", default=False, disabled=False)
+            age_na = checkbox_unknown("na_age", default=False)
             age_now = st.number_input(
                 label="",
                 min_value=1,
@@ -318,11 +331,10 @@ with st.form("input_form"):
                 value=10,
                 step=1,
                 key="age_value",
-                label_visibility="collapsed",
-                disabled=False
+                label_visibility="collapsed"
             )
 
-        # --- TEMPERATURE (optional NA default 10) ---
+        # TEMPERATURE
         with c2:
             feature_header("Temperature (°C)")
             temp_na = checkbox_unknown("na_temp", default=True)
@@ -332,57 +344,67 @@ with st.form("input_form"):
             else:
                 T_used = float(num_input_no_label("temp_value", -50.0, 60.0, float(T0), STEPS["Temperature (°C)"]))
 
-        # --- Soil_pH ---
+        # Soil_pH
         with c1:
             feature_header("Soil_pH")
             na = checkbox_unknown("na_Soil_pH", default=False)
             if na:
-                _ = num_input_no_label("val_Soil_pH", *RANGES["Soil_pH"], 7.0, STEPS["Soil_pH"], disabled=True, help_text=f"Range: {RANGES['Soil_pH'][0]} to {RANGES['Soil_pH'][1]}")
+                _ = num_input_no_label("val_Soil_pH", *RANGES["Soil_pH"], 7.0, STEPS["Soil_pH"], disabled=True,
+                                       help_text=f"Range: {RANGES['Soil_pH'][0]} to {RANGES['Soil_pH'][1]}")
                 user_row["Soil_pH"] = np.nan
             else:
-                user_row["Soil_pH"] = float(num_input_no_label("val_Soil_pH", *RANGES["Soil_pH"], 7.0, STEPS["Soil_pH"], help_text=f"Range: {RANGES['Soil_pH'][0]} to {RANGES['Soil_pH'][1]}"))
+                user_row["Soil_pH"] = float(num_input_no_label("val_Soil_pH", *RANGES["Soil_pH"], 7.0, STEPS["Soil_pH"],
+                                                               help_text=f"Range: {RANGES['Soil_pH'][0]} to {RANGES['Soil_pH'][1]}"))
 
-        # --- Chloride ---
+        # Chloride
         with c2:
             feature_header("Chloride Content (mg/kg)")
             na = checkbox_unknown("na_Chloride", default=False)
             if na:
-                _ = num_input_no_label("val_Chloride", *RANGES["Chloride Content (mg/kg)"], 200.0, STEPS["Chloride Content (mg/kg)"], disabled=True, help_text=f"Range: {RANGES['Chloride Content (mg/kg)'][0]} to {RANGES['Chloride Content (mg/kg)'][1]}")
+                _ = num_input_no_label("val_Chloride", *RANGES["Chloride Content (mg/kg)"], 200.0, STEPS["Chloride Content (mg/kg)"], disabled=True,
+                                       help_text=f"Range: {RANGES['Chloride Content (mg/kg)'][0]} to {RANGES['Chloride Content (mg/kg)'][1]}")
                 user_row["Chloride Content (mg/kg)"] = np.nan
             else:
-                user_row["Chloride Content (mg/kg)"] = float(num_input_no_label("val_Chloride", *RANGES["Chloride Content (mg/kg)"], 200.0, STEPS["Chloride Content (mg/kg)"], help_text=f"Range: {RANGES['Chloride Content (mg/kg)'][0]} to {RANGES['Chloride Content (mg/kg)'][1]}"))
+                user_row["Chloride Content (mg/kg)"] = float(num_input_no_label("val_Chloride", *RANGES["Chloride Content (mg/kg)"], 200.0, STEPS["Chloride Content (mg/kg)"],
+                                                                                help_text=f"Range: {RANGES['Chloride Content (mg/kg)'][0]} to {RANGES['Chloride Content (mg/kg)'][1]}"))
 
-        # --- Resistivity ---
+        # Resistivity
         with c1:
             feature_header("Soil_Resistivity (Ω·cm)")
             na = checkbox_unknown("na_Res", default=False)
             if na:
-                _ = num_input_no_label("val_Res", *RANGES["Soil_Resistivity (Ω·cm)"], 5000.0, STEPS["Soil_Resistivity (Ω·cm)"], disabled=True, help_text=f"Range: {RANGES['Soil_Resistivity (Ω·cm)'][0]} to {RANGES['Soil_Resistivity (Ω·cm)'][1]}")
+                _ = num_input_no_label("val_Res", *RANGES["Soil_Resistivity (Ω·cm)"], 5000.0, STEPS["Soil_Resistivity (Ω·cm)"], disabled=True,
+                                       help_text=f"Range: {RANGES['Soil_Resistivity (Ω·cm)'][0]} to {RANGES['Soil_Resistivity (Ω·cm)'][1]}")
                 user_row["Soil_Resistivity (Ω·cm)"] = np.nan
             else:
-                user_row["Soil_Resistivity (Ω·cm)"] = float(num_input_no_label("val_Res", *RANGES["Soil_Resistivity (Ω·cm)"], 5000.0, STEPS["Soil_Resistivity (Ω·cm)"], help_text=f"Range: {RANGES['Soil_Resistivity (Ω·cm)'][0]} to {RANGES['Soil_Resistivity (Ω·cm)'][1]}"))
+                user_row["Soil_Resistivity (Ω·cm)"] = float(num_input_no_label("val_Res", *RANGES["Soil_Resistivity (Ω·cm)"], 5000.0, STEPS["Soil_Resistivity (Ω·cm)"],
+                                                                               help_text=f"Range: {RANGES['Soil_Resistivity (Ω·cm)'][0]} to {RANGES['Soil_Resistivity (Ω·cm)'][1]}"))
 
-        # --- Sulphate ---
+        # Sulphate
         with c2:
             feature_header("Sulphate_Content (mg/kg)")
             na = checkbox_unknown("na_Sul", default=False)
             if na:
-                _ = num_input_no_label("val_Sul", *RANGES["Sulphate_Content (mg/kg)"], 100.0, STEPS["Sulphate_Content (mg/kg)"], disabled=True, help_text=f"Range: {RANGES['Sulphate_Content (mg/kg)'][0]} to {RANGES['Sulphate_Content (mg/kg)'][1]}")
+                _ = num_input_no_label("val_Sul", *RANGES["Sulphate_Content (mg/kg)"], 100.0, STEPS["Sulphate_Content (mg/kg)"], disabled=True,
+                                       help_text=f"Range: {RANGES['Sulphate_Content (mg/kg)'][0]} to {RANGES['Sulphate_Content (mg/kg)'][1]}")
                 user_row["Sulphate_Content (mg/kg)"] = np.nan
             else:
-                user_row["Sulphate_Content (mg/kg)"] = float(num_input_no_label("val_Sul", *RANGES["Sulphate_Content (mg/kg)"], 100.0, STEPS["Sulphate_Content (mg/kg)"], help_text=f"Range: {RANGES['Sulphate_Content (mg/kg)'][0]} to {RANGES['Sulphate_Content (mg/kg)'][1]}"))
+                user_row["Sulphate_Content (mg/kg)"] = float(num_input_no_label("val_Sul", *RANGES["Sulphate_Content (mg/kg)"], 100.0, STEPS["Sulphate_Content (mg/kg)"],
+                                                                                help_text=f"Range: {RANGES['Sulphate_Content (mg/kg)'][0]} to {RANGES['Sulphate_Content (mg/kg)'][1]}"))
 
-        # --- Moisture ---
+        # Moisture
         with c1:
             feature_header("Moisture_Content (%)")
             na = checkbox_unknown("na_Moist", default=False)
             if na:
-                _ = num_input_no_label("val_Moist", *RANGES["Moisture_Content (%)"], 15.0, STEPS["Moisture_Content (%)"], disabled=True, help_text=f"Range: {RANGES['Moisture_Content (%)'][0]} to {RANGES['Moisture_Content (%)'][1]}")
+                _ = num_input_no_label("val_Moist", *RANGES["Moisture_Content (%)"], 15.0, STEPS["Moisture_Content (%)"], disabled=True,
+                                       help_text=f"Range: {RANGES['Moisture_Content (%)'][0]} to {RANGES['Moisture_Content (%)'][1]}")
                 user_row["Moisture_Content (%)"] = np.nan
             else:
-                user_row["Moisture_Content (%)"] = float(num_input_no_label("val_Moist", *RANGES["Moisture_Content (%)"], 15.0, STEPS["Moisture_Content (%)"], help_text=f"Range: {RANGES['Moisture_Content (%)'][0]} to {RANGES['Moisture_Content (%)'][1]}"))
+                user_row["Moisture_Content (%)"] = float(num_input_no_label("val_Moist", *RANGES["Moisture_Content (%)"], 15.0, STEPS["Moisture_Content (%)"],
+                                                                            help_text=f"Range: {RANGES['Moisture_Content (%)'][0]} to {RANGES['Moisture_Content (%)'][1]}"))
 
-        # --- Soil Type ---
+        # Soil Type
         with c2:
             feature_header("Soil Type (USCS)")
             na = checkbox_unknown("na_SoilType", default=False)
@@ -392,7 +414,7 @@ with st.form("input_form"):
             else:
                 user_row["Soil Type"] = select_input_no_label("val_SoilType", SOIL_TYPES, default_idx=1)
 
-        # --- Location wrt water table ---
+        # Water table
         with c1:
             feature_header("Location wrt Water Table")
             na = checkbox_unknown("na_WT", default=False)
@@ -402,7 +424,7 @@ with st.form("input_form"):
             else:
                 user_row["Location wrt Water Table"] = select_input_no_label("val_WT", WATER_TABLE, default_idx=0)
 
-        # --- Foreign inclusion ---
+        # Foreign inclusion
         with c2:
             feature_header("Foreign_Inclusion_Type")
             na = checkbox_unknown("na_Foreign", default=False)
@@ -412,7 +434,7 @@ with st.form("input_form"):
             else:
                 user_row["Foreign_Inclusion_Type"] = select_input_no_label("val_Foreign", FOREIGN_INCL, default_idx=0)
 
-        # --- Fill material ---
+        # Fill material
         with c1:
             feature_header("Is_Fill_Material")
             na = checkbox_unknown("na_Fill", default=False)
@@ -424,9 +446,9 @@ with st.form("input_form"):
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # RIGHT PANEL (boxed)
+    # RIGHT PANEL
     with right:
-        st.markdown("<div class='panel'>", unsafe_allow_html=True)
+        st.markdown("<div class='panel mc-panel'>", unsafe_allow_html=True)
         st.markdown(f"<div class='sectiontitle' style='margin-top:0;color:{MCMAROON};'>Monte Carlo Settings</div>", unsafe_allow_html=True)
 
         Ns = st.number_input("Sample size (Ns)", min_value=1000, max_value=50000, value=MC_NS_DEFAULT, step=1000)
@@ -467,9 +489,11 @@ if submitted:
         st.error(f"Prediction failed: {e}")
         st.stop()
 
+    age_now = int(st.session_state["age_value"])
+
     single = mc_TL_from_k(
         mu_k=mu_k, sd_k=sd_k,
-        ages=[int(st.session_state["age_value"])],
+        ages=[age_now],
         T_used=float(T_used), T0=float(T0),
         mu_n=mu_n, mu_beta=mu_beta,
         n_bounds=(float(nL), float(nU)),
@@ -510,7 +534,6 @@ if submitted:
         st.markdown("<div class='outline'><b>Predicted k from ML</b></div>", unsafe_allow_html=True)
         st.latex(rf"\mu_k={mu_k:.6f}\qquad \sigma_k={sd_k:.6f}")
 
-        age_now = int(st.session_state["age_value"])
         st.markdown(f"<div class='outline'><b>Thickness loss at Input Age ({age_now} years)</b></div>", unsafe_allow_html=True)
         st.latex(rf"\text{{68\% CI: }} {mean_TL:.3f}\pm{sd_TL:.3f}\qquad \text{{95\% CI: }} {mean_TL:.3f}\pm{2.0*sd_TL:.3f}")
 
@@ -540,4 +563,3 @@ if submitted:
 
         png_bytes = fig_to_png_bytes(fig)
         st.download_button("Download plot (PNG)", data=png_bytes, file_name="thickness_loss_plot.png", mime="image/png")
-
