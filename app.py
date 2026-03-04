@@ -183,19 +183,19 @@ st.markdown(
       .title {{
         color: {MCMAROON};
         font-weight: 900;
-        font-size: 48px;
+        font-size: 36px;
         margin-bottom: 6px;
       }}
       .subtitle {{
         color: {MCMAROON};
-        font-size: 34px;
+        font-size: 26px;
         font-weight: 600;
         line-height: 1.25;
         margin-bottom: 6px;
       }}
       .sectiontitle {{
         color: {MCMAROON};
-        font-size: 30px;
+        font-size: 22px;
         font-weight: 900;
         margin-top: 16px;
         margin-bottom: 10px;
@@ -208,18 +208,18 @@ st.markdown(
       }}
       .feat {{
         color: {LABELBLUE};
-        font-weight: 900;
-        font-size: 28px;
+        font-weight: 600;
+        font-size: 22px;
         margin-top: 8px;
         margin-bottom: 4px;
       }}
 
       /* Make widget text bigger */
       .stNumberInput input, .stSelectbox div[data-baseweb="select"] {{
-        font-size: 22px !important;
+        font-size: 18px !important;
       }}
       .stCheckbox p {{
-        font-size: 22px !important;
+        font-size: 18px !important;
       }}
 
       /* Yellow run button */
@@ -540,3 +540,4 @@ if submitted:
 
         png_bytes = fig_to_png_bytes(fig)
         st.download_button("Download plot (PNG)", data=png_bytes, file_name="thickness_loss_plot.png", mime="image/png")
+
