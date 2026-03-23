@@ -497,9 +497,9 @@ if submitted:
         shared_n_beta=bool(shared),
     ).iloc[0]
 
-        mean_TL = float(single["Mean Thickness loss (mm)"])
-        q75 = float(single["Q75 Thickness loss (mm)"])
-        q95 = float(single["Q95 Thickness loss (mm)"])
+    mean_TL = float(single["Mean Thickness loss (mm)"])
+    q75 = float(single["Q75 Thickness loss (mm)"])
+    q95 = float(single["Q95 Thickness loss (mm)"])
 
     horizon_df = mc_TL_from_k(
         mu_k=mu_k, sd_k=sd_k,
