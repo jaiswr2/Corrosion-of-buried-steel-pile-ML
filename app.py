@@ -493,7 +493,7 @@ if submitted:
         n_bounds=(float(nL), float(nU)),
         beta_bounds=(float(bL), float(bU)),
         Ns=int(Ns),
-        seed=42,
+        seed=123,
         shared_n_beta=bool(shared),
     ).iloc[0]
 
