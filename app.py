@@ -152,21 +152,19 @@ def mc_TL_from_k(
         TL_s = k_s * time_fac * temp_fac
 
         TL_mean = float(np.mean(TL_s))
-
-        # Predictive intervals via quantiles
-        q025, q125, q875, q975 = np.quantile(TL_s, [0.025, 0.125, 0.875, 0.975])
-        q025 = float(max(q025, 0.0))
-        q125 = float(max(q125, 0.0))
-        q875 = float(max(q875, 0.0))
-        q975 = float(max(q975, 0.0))
-
+        
+        q05 = float(np.quantile(TL_s, 0.05))
+        q25 = float(np.quantile(TL_s, 0.25))
+        q75 = float(np.quantile(TL_s, 0.75))
+        q95 = float(np.quantile(TL_s, 0.95))
+        
         out_rows.append({
             "Age": int(t_age),
-            "Mean_TL (mm)": TL_mean,
-            "TL_q125 (mm)": q125,
-            "TL_q875 (mm)": q875,
-            "TL_q025 (mm)": q025,
-            "TL_q975 (mm)": q975,
+            "Mean Thickness loss (mm)": TL_mean,
+            "Q05 Thickness loss (mm)": q05,
+            "Q25 Thickness loss (mm)": q25,
+            "Q75 Thickness loss (mm)": q75,
+            "Q95 Thickness loss (mm)": q95,
         })
 
     return pd.DataFrame(out_rows)
@@ -499,11 +497,9 @@ if submitted:
         shared_n_beta=bool(shared),
     ).iloc[0]
 
-    mean_TL = float(single["Mean_TL (mm)"])
-    q125 = float(single["TL_q125 (mm)"])
-    q875 = float(single["TL_q875 (mm)"])
-    q025 = float(single["TL_q025 (mm)"])
-    q975 = float(single["TL_q975 (mm)"])
+        mean_TL = float(single["Mean Thickness loss (mm)"])
+        q75 = float(single["Q75 Thickness loss (mm)"])
+        q95 = float(single["Q95 Thickness loss (mm)"])
 
     horizon_df = mc_TL_from_k(
         mu_k=mu_k, sd_k=sd_k,
@@ -519,9 +515,9 @@ if submitted:
 
     out_tbl = pd.DataFrame({
         "Age": horizon_df["Age"].astype(int),
-        "Mean_TL (mm)": horizon_df["Mean_TL (mm)"].round(3),
-        "TL (75% PI)": [fmt_pi(a, b, 3) for a, b in zip(horizon_df["TL_q125 (mm)"], horizon_df["TL_q875 (mm)"])],
-        "TL (95% PI)": [fmt_pi(a, b, 3) for a, b in zip(horizon_df["TL_q025 (mm)"], horizon_df["TL_q975 (mm)"])],
+        "Mean Thickness loss (mm)": horizon_df["Mean Thickness loss (mm)"].round(3),
+        "75 Quantile": horizon_df["Q75 Thickness loss (mm)"].round(3),
+        "95 Quantile": horizon_df["Q95 Thickness loss (mm)"].round(3),
     })
 
     st.markdown("<div class='sectiontitle'>Output</div>", unsafe_allow_html=True)
@@ -534,9 +530,9 @@ if submitted:
 
         st.markdown(f"<div class='outline'><b>Thickness loss at Input Age ({age_now} years)</b></div>", unsafe_allow_html=True)
         st.write(
-            f"Mean = **{mean_TL:.3f} mm**  |  "
-            f"75% PI = **[{q125:.3f}, {q875:.3f}] mm**  |  "
-            f"95% PI = **[{q025:.3f}, {q975:.3f}] mm**"
+            f"Mean Thickness loss (mm) = **{mean_TL:.3f}**   |   "
+            f"75 Quantile = **{q75:.3f}**   |   "
+            f"95 Quantile = **{q95:.3f}**"
         )
 
         st.markdown("<div class='sectiontitle'>Thickness Loss across Time</div>", unsafe_allow_html=True)
@@ -547,18 +543,25 @@ if submitted:
 
     with out_right:
         ages = horizon_df["Age"].values
-        mean = horizon_df["Mean_TL (mm)"].values
-        lo75 = horizon_df["TL_q125 (mm)"].values
-        hi75 = horizon_df["TL_q875 (mm)"].values
-        lo95 = horizon_df["TL_q025 (mm)"].values
-        hi95 = horizon_df["TL_q975 (mm)"].values
+        mean = horizon_df["Mean Thickness loss (mm)"].values
+        
+        lo50 = horizon_df["Q25 Thickness loss (mm)"].values
+        hi50 = horizon_df["Q75 Thickness loss (mm)"].values
+        
+        lo90 = horizon_df["Q05 Thickness loss (mm)"].values
+        hi90 = horizon_df["Q95 Thickness loss (mm)"].values
 
+        PLOT_MEAN = "cornflowerblue"
+        PLOT_BAND = "deeppink"
+        
         fig = plt.figure(figsize=(10, 6))
-        plt.plot(ages, mean, linewidth=2.5, color=PLOT_MEAN, label="Mean TL")
-        plt.fill_between(ages, lo95, hi95, alpha=0.18, color=PLOT_BAND, label="95% PI (2.5–97.5%)")
-        plt.fill_between(ages, lo75, hi75, alpha=0.35, color=PLOT_BAND, label="75% PI (12.5–87.5%)")
+        plt.plot(ages, mean, linewidth=2.5, color=PLOT_MEAN, label="Mean Thickness loss")
+        
+        plt.fill_between(ages, lo90, hi90, alpha=0.18, color=PLOT_BAND, label="90% band (5–95)")
+        plt.fill_between(ages, lo50, hi50, alpha=0.35, color=PLOT_BAND, label="50% band (25–75)")
+        
         plt.xlabel("Age (year)")
-        plt.ylabel("Thickness Loss (mm)")
+        plt.ylabel("Thickness loss (mm)")
         plt.grid(True, alpha=0.3)
         plt.legend()
         st.pyplot(fig)
